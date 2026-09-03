@@ -60,6 +60,7 @@
       }
       .topbar {
         min-width: 0;
+        flex-wrap: wrap;
         background: var(--ink);
         color: #fff;
         border-radius: 14px;
@@ -71,6 +72,8 @@
         box-shadow: var(--shadow);
       }
       .brand {
+        min-width: 0;
+        flex: 1 1 260px;
         display: flex;
         align-items: center;
         gap: 16px;
@@ -207,6 +210,10 @@
         font-weight: 700;
       }
       .btn {
+        max-width: 100%;
+        min-width: 0;
+        touch-action: manipulation;
+        overflow-wrap: anywhere;
         border: 1px solid var(--line);
         border-radius: 7px;
         background: #fff;
@@ -727,6 +734,7 @@
         color: #172033;
       }
       .library {
+        display: none;
         margin-top: 16px;
       }
       .library summary {
@@ -823,6 +831,7 @@
         }
         .topbar {
           gap: 14px;
+          width: 100%;
         }
         .brand {
           gap: 10px;
@@ -831,7 +840,9 @@
           padding: 18px;
         }
         .brand h1 {
+          max-width: 100%;
           font-size: 21px;
+          line-height: 1.35;
         }
         .card,
         .chart-card,
@@ -855,6 +866,8 @@
         }
         .top-actions .btn {
           flex: 1 1 0;
+          min-width: 0;
+          white-space: normal;
         }
         .info-grid {
           grid-template-columns: 1fr 1fr;
@@ -868,12 +881,36 @@
         .btn {
           min-height: 42px;
         }
+        .line-buttons {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .line-buttons button {
+          min-height: 38px;
+        }
         .toast {
           left: 12px;
           right: 12px;
           bottom: 12px;
           text-align: center;
         }
+      }
+      @media (max-width: 390px) {
+        .app { padding: 8px; }
+        .topbar { padding: 14px; border-radius: 10px; }
+        .brand { gap: 8px; }
+        .brand-mark { width: 38px; height: 38px; font-size: 21px; }
+        .eyebrow { font-size: 10px; letter-spacing: .1em; }
+        .brand h1 { font-size: 18px; letter-spacing: .03em; }
+        .top-actions { gap: 6px; }
+        .top-actions .btn { padding: 8px 6px; font-size: 12px; }
+        .card, .chart-card, .result-head, .plain-card { padding: 12px; }
+        .info-grid { grid-template-columns: 1fr; }
+        .hex-overview { grid-template-columns: 1fr; gap: 10px; }
+        .plain-toolbar { gap: 8px; }
+        .plain-toolbar .btn-row { width: 100%; }
+        .plain-toolbar .btn-row .btn { flex: 1 1 0; padding-left: 6px; padding-right: 6px; }
+        .live-time-input { font-size: 15px !important; letter-spacing: 0; }
+        .hex-modal-dialog { padding: 14px; }
       }
       .hex-lookup-grid {
         display: grid;
@@ -1024,6 +1061,11 @@
           grid-template-columns: 1fr;
         }
         .hex-modal-dialog {
+          width: calc(100% - 20px);
+          max-height: calc(100dvh - 20px);
+          margin: 10px auto;
+        }
+        .hex-modal-dialog {
           padding: 18px;
         }
         .top-actions .btn:first-child {
@@ -1043,6 +1085,12 @@
       .hex-only-mode .library {
         display: block;
         margin-top: 0;
+      }
+      .advanced summary {
+        cursor: pointer;
+        color: var(--ink-2);
+        font-weight: 700;
+        padding: 2px 0 6px;
       }
       .hex-only-mode .library details {
         display: block;
@@ -1126,7 +1174,7 @@
           </div>
         </div>
         <div class="top-actions">
-          <button class="btn" id="hexLookupBtn" type="button">卦象速查</button
+          <button class="btn" id="hexLookupBtn" type="button" aria-expanded="false" aria-controls="hexLibraryCard">卦象速查</button
               ><button class="btn" id="resetBtn" type="button">重新起卦</button>
         </div>
       </header>
@@ -1207,7 +1255,7 @@
           </section>
           <section class="card">
             <div class="card-title">
-              <span>進階顯示</span
+              <span>顯示設定</span
               ><span class="small" style="color: var(--muted)">可隨時切換</span>
             </div>
             <label class="checkline"
@@ -1231,21 +1279,12 @@
                 checked
               />顯示卦辭與爻辭</label
             >
-            <div class="advanced">
-              <div
-                class="small"
-                style="
-                  font-weight: 700;
-                  color: var(--ink-2);
-                  margin-bottom: 6px;
-                "
-              >
-                排盤說明
-              </div>
+            <details class="advanced">
+              <summary>排盤說明</summary>
               <div class="hint">
                 月建、日辰、旬空及六神依輸入的起卦時間計算；納甲採京房八宮裝卦規則。
               </div>
-            </div>
+            </details>
           </section>
           <section class="card">
             <div class="card-title"><span>使用提示</span></div>
@@ -1327,8 +1366,8 @@
               </div>
             </section>
           </div>
-          <section class="card library" id="hexLibraryCard">
-            <details id="hexLibraryDetails" open>
+          <section class="card library" id="hexLibraryCard" aria-hidden="true">
+            <details id="hexLibraryDetails">
               <summary>64 卦速查與詳細解說</summary>
               <div class="library-tools">
                 <input
@@ -2631,7 +2670,11 @@
         }
         let manual = [1, 1, 1, 1, 1, 1],
           last = null,
-          lastRenderedTimeKey = "";
+          lastRenderedTimeKey = "",
+          locationRequestId = 0,
+          locationFailSafe = null,
+          locationIpController = null,
+          locationReverseController = null;
         function toast(msg) {
           const el = document.getElementById("toast");
           el.textContent = msg;
@@ -2970,7 +3013,7 @@
             }
             const next = toDateTimeLocalValue(now);
             divineTime.value = toDateTimeDisplayValue(now);
-            timeStatus.textContent = "目前時間（自動更新）";
+              timeStatus.textContent = next.replace("T", " ") + "（目前時間）";
             if (last && lastRenderedTimeKey !== next) {
               process(last.yaos, last.source, { silent: true });
             }
@@ -3025,6 +3068,10 @@
             process(manual, `手動選卦：本卦 ${hexName(p)}／變卦 ${hexName(c)}`);
           };
           document.getElementById("locationBtn").onclick = () => {
+            const requestId = ++locationRequestId;
+            if (locationFailSafe) window.clearTimeout(locationFailSafe);
+            if (locationIpController) locationIpController.abort();
+            if (locationReverseController) locationReverseController.abort();
             const status = document.getElementById("locationStatus"),
               locationBox = document.getElementById("location"),
               embedded = window.top !== window.self;
@@ -3037,6 +3084,7 @@
                 (embedded && kind === "approx"
                   ? "（Google Sites 嵌入模式無法使用精準定位）"
                   : "");
+              try { localStorage.setItem("liuyao:lastLocation", label); } catch (e) {}
               if (last) {
                 document.getElementById("plainText").value = plainReport(
                   last.primary,
@@ -3049,8 +3097,21 @@
               }
             };
             const useIpFallback = async () => {
+              let cached = "";
+              try { cached = localStorage.getItem("liuyao:lastLocation") || ""; } catch (e) {}
+              if (requestId !== locationRequestId) return;
+              if (cached) {
+                setLocation(cached, "approx");
+                status.textContent = `沿用上次所在地：${cached}`;
+                return;
+              }
+              if (navigator.onLine === false) {
+                status.textContent = "目前離線，無法取得新定位；卜卦功能仍可正常使用。";
+                return;
+              }
               status.textContent = "正在取得約略所在地…";
               const controller = typeof AbortController === "function" ? new AbortController() : null;
+              locationIpController = controller;
               const timeout = controller ? window.setTimeout(() => controller.abort(), 3500) : null;
               try {
                 const r = await fetch("https://ipapi.co/json/", {
@@ -3058,6 +3119,7 @@
                   signal: controller ? controller.signal : undefined,
                 });
                 const data = await r.json();
+                if (requestId !== locationRequestId) return;
                 if (data && (data.city || data.region || data.country_name)) {
                   setLocation(
                     `${data.city || ""}${data.region ? `，${data.region}` : ""}${data.country_name ? `，${data.country_name}` : ""}`,
@@ -3067,6 +3129,7 @@
                 }
               } catch (e) {}
               if (timeout) window.clearTimeout(timeout);
+              if (requestId !== locationRequestId) return;
               status.textContent = "無法自動取得所在地，請稍後再試或直接開啟瀏覽器定位權限。";
               toast("所在地點抓取失敗");
             };
@@ -3074,20 +3137,30 @@
               useIpFallback();
               return;
             }
+            if (navigator.onLine === false) {
+              useIpFallback();
+              return;
+            }
             if (!navigator.geolocation) {
-              status.textContent = "此瀏覽器不支援定位功能。";
+              useIpFallback();
               return;
             }
             status.textContent = embedded
               ? "正在請求定位；若 Google Sites 阻擋，將改用約略位置…"
               : "正在取得所在地點，請允許瀏覽器使用定位…";
+            locationFailSafe = window.setTimeout(() => {
+              if (requestId === locationRequestId && !locationBox.value) useIpFallback();
+            }, 5000);
             navigator.geolocation.getCurrentPosition(
               (pos) => {
+                if (requestId !== locationRequestId) return;
                 const lat = pos.coords.latitude.toFixed(5),
                   lon = pos.coords.longitude.toFixed(5);
                 const coordinateLabel = `座標 ${lat}, ${lon}`;
                 setLocation(coordinateLabel);
+                window.clearTimeout(locationFailSafe);
                 const controller = typeof AbortController === "function" ? new AbortController() : null;
+                locationReverseController = controller;
                 const timeout = controller ? window.setTimeout(() => controller.abort(), 3500) : null;
                 fetch(
                   `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&accept-language=zh-TW`,
@@ -3095,7 +3168,7 @@
                 )
                   .then((r) => (r.ok ? r.json() : null))
                   .then((data) => {
-                    if (data && data.display_name) setLocation(data.display_name);
+                    if (requestId === locationRequestId && data && data.display_name) setLocation(data.display_name);
                   })
                   .catch(() => {})
                   .finally(() => {
@@ -3103,6 +3176,8 @@
                   });
               },
               (err) => {
+                if (requestId !== locationRequestId) return;
+                window.clearTimeout(locationFailSafe);
                 if (err && err.code === 1 && embedded) {
                   useIpFallback();
                 } else if (err && err.code === 1) {
@@ -3193,10 +3268,12 @@
             const lookupBtn = document.getElementById("hexLookupBtn"),
               resetBtn = document.getElementById("resetBtn");
             lookupBtn.textContent = on ? "返回排盤" : "卦象速查";
+            lookupBtn.setAttribute("aria-expanded", String(on));
+            document.getElementById("hexLibraryCard").setAttribute("aria-hidden", String(!on));
             resetBtn.textContent = on ? "起卦排盤" : "重新起卦";
             resetBtn.onclick = on ? toggleHexOnlyMode : reset;
             const details = document.getElementById("hexLibraryDetails");
-            details.open = true;
+            details.open = on;
             if (on) {
               document
                 .getElementById("hexLibraryCard")

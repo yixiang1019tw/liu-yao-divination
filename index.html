@@ -23,8 +23,16 @@
         --shadow: 0 12px 36px rgba(23, 32, 51, 0.08);
         --radius: 10px;
       }
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
       }
       html {
         scroll-behavior: smooth;
@@ -45,11 +53,13 @@
         font: inherit;
       }
       .app {
+        width: 100%;
         max-width: 1240px;
         margin: 0 auto;
         padding: 24px 24px 48px;
       }
       .topbar {
+        min-width: 0;
         background: var(--ink);
         color: #fff;
         border-radius: 14px;
@@ -83,11 +93,13 @@
         margin-bottom: 3px;
       }
       .brand h1 {
+        min-width: 0;
         margin: 0;
         font-family: Georgia, "Noto Serif TC", serif;
         font-size: 25px;
         font-weight: 600;
         letter-spacing: 0.08em;
+        overflow-wrap: anywhere;
       }
       .top-actions {
         display: flex;
@@ -100,6 +112,7 @@
         border-color: #536278;
       }
       .layout {
+        width: 100%;
         display: grid;
         grid-template-columns: 330px minmax(0, 1fr);
         gap: 24px;
@@ -139,6 +152,7 @@
       }
       .field label {
         display: block;
+        overflow-wrap: anywhere;
         font-size: 12px;
         color: var(--muted);
         font-weight: 700;
@@ -148,7 +162,10 @@
       input[type="text"],
       input[type="datetime-local"],
       select {
+        display: block;
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
         border: 1px solid var(--line);
         border-radius: 7px;
         background: #fff;
@@ -240,8 +257,32 @@
         padding-top: 14px;
         margin-top: 16px;
       }
+      .live-time-display {
+        display: block;
+        margin: 8px 0 0;
+        padding: 8px 10px;
+        border: 1px solid #d7e4ef;
+        border-radius: 7px;
+        background: var(--blue-pale);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 700;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+      .live-time-input {
+        color: var(--blue) !important;
+        font-size: 17px !important;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        background: #f8fbfe !important;
+      }
       .checkline {
         display: flex;
+        width: 100%;
+        min-width: 0;
         gap: 8px;
         align-items: center;
         color: var(--ink-2);
@@ -249,7 +290,12 @@
         margin: 8px 0;
       }
       .checkline input {
+        flex: 0 0 auto;
         accent-color: var(--blue);
+      }
+      .checkline span {
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
       .manual {
         display: none;
@@ -440,6 +486,7 @@
         font-weight: 700;
       }
       .chart-card {
+        min-width: 0;
         background: #fff;
         border: 1px solid var(--line);
         border-radius: var(--radius);
@@ -609,6 +656,7 @@
         font-weight: 700;
       }
       .plain-card {
+        min-width: 0;
         background: #111b2d;
         border-radius: var(--radius);
         box-shadow: var(--shadow);
@@ -639,6 +687,7 @@
       .plain-card textarea {
         display: block;
         width: 100%;
+        min-width: 0;
         height: 460px;
         resize: vertical;
         background: #0b1322;
@@ -757,7 +806,26 @@
       }
       @media (max-width: 600px) {
         .app {
-          padding: 12px;
+          padding: 10px;
+        }
+        .topbar,
+        .brand,
+        .plain-head,
+        .chart-card-title,
+        .plain-toolbar {
+          align-items: stretch;
+        }
+        .topbar,
+        .brand,
+        .plain-head,
+        .chart-card-title {
+          flex-direction: column;
+        }
+        .topbar {
+          gap: 14px;
+        }
+        .brand {
+          gap: 10px;
         }
         .topbar {
           padding: 18px;
@@ -782,7 +850,29 @@
           display: block;
         }
         .top-actions {
-          display: none;
+          display: flex;
+          width: 100%;
+        }
+        .top-actions .btn {
+          flex: 1 1 0;
+        }
+        .info-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .library-tools {
+          flex-direction: column;
+        }
+        .library-tools input {
+          max-width: none;
+        }
+        .btn {
+          min-height: 42px;
+        }
+        .toast {
+          left: 12px;
+          right: 12px;
+          bottom: 12px;
+          text-align: center;
         }
       }
       .hex-lookup-grid {
@@ -1037,7 +1127,7 @@
         </div>
         <div class="top-actions">
           <button class="btn" id="hexLookupBtn" type="button">卦象速查</button
-          ><button class="btn" id="resetBtn" type="button">重新起卦</button>
+              ><button class="btn" id="resetBtn" type="button">重新起卦</button>
         </div>
       </header>
       <div class="layout">
@@ -1048,7 +1138,8 @@
             </div>
             <div class="field">
               <label for="divineTime">起卦日期時間</label
-              ><input id="divineTime" type="datetime-local" />
+              ><input id="divineTime" class="live-time-input" type="text" aria-describedby="timeStatus" readonly value="--" />
+              <p class="live-time-display" id="timeStatus" role="status" aria-live="off">目前時間</p>
             </div>
             <div class="field">
               <label>性別</label>
@@ -1085,14 +1176,14 @@
                 可選擇是否使用瀏覽器定位；不會要求手動輸入。
               </p>
             </div>
-            <button class="btn primary full" id="computerBtn">
+            <button class="btn primary full" id="computerBtn" type="button">
               電腦起卦・擲三錢
             </button>
             <p class="hint">
               不熟悉手動起卦時，請使用電腦起卦。系統會自動產生六爻與動爻。
             </p>
             <div class="btn-row" style="margin-top: 14px">
-              <button class="btn full" id="manualBtn">手動輸入卦象</button>
+                              <button class="btn full" id="manualBtn" type="button">手動輸入卦象</button>
             </div>
             <div class="manual" id="manualPanel">
               <div class="hint" style="margin: 0 0 12px">
@@ -1229,9 +1320,9 @@
               <div class="plain-toolbar">
                 <span class="status" id="plainStatus">等待操作</span>
                 <div class="btn-row">
-                  <button class="btn" id="selectPlain">全選文字</button
-                  ><button class="btn" id="downloadPlain">下載 TXT</button
-                  ><button class="btn primary" id="copyPlain">一鍵複製</button>
+                  <button class="btn" id="selectPlain" type="button">全選文字</button
+                  ><button class="btn" id="downloadPlain" type="button">下載 TXT</button
+                  ><button class="btn primary" id="copyPlain" type="button">一鍵複製</button>
                 </div>
               </div>
             </section>
@@ -2521,12 +2612,26 @@
           if (v === 3) return "老陽 ○";
           return v ? "陽爻" : "陰爻";
         }
+        function toDateTimeLocalValue(date = new Date()) {
+          const pad = (v) => String(v).padStart(2, "0");
+          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+        function toDateTimeDisplayValue(date = new Date()) {
+          const pad = (v) => String(v).padStart(2, "0");
+          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
         function getDate() {
           const raw = document.getElementById("divineTime").value;
-          return raw ? new Date(raw) : new Date();
+          if (!raw) return new Date();
+          const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+          if (!match) return new Date();
+          const [, y, m, d, h, min, sec = "0"] = match;
+          const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), Number(sec), 0);
+          return Number.isNaN(date.getTime()) ? new Date() : date;
         }
         let manual = [1, 1, 1, 1, 1, 1],
-          last = null;
+          last = null,
+          lastRenderedTimeKey = "";
         function toast(msg) {
           const el = document.getElementById("toast");
           el.textContent = msg;
@@ -2767,7 +2872,7 @@
             "\n==================================================\n由 yixiang1019tw 製作維護 · 保有一切權利\n內容僅供文化研究與娛樂參考。";
           return t;
         }
-        function process(yaos, source) {
+        function process(yaos, source, options = {}) {
           const primary = getPrimary(yaos);
           if (!primary) {
             toast("無法辨識卦象");
@@ -2779,7 +2884,8 @@
           const changing = getChanging(yaos);
           const p = pillars(getDate());
           const meta = chartMeta(primary);
-          last = { yaos, primary, changing, meta, pillars: p, source };
+          last = { yaos: [...yaos], primary, changing, meta, pillars: p, source };
+          lastRenderedTimeKey = toDateTimeLocalValue(getDate());
           document.getElementById("emptyState").style.display = "none";
           document.getElementById("result").classList.add("show");
           document.getElementById("resultTitle").textContent =
@@ -2820,10 +2926,12 @@
           );
           document.getElementById("plainStatus").textContent =
             "報告已更新，可複製或下載";
-          document
-            .getElementById("result")
-            .scrollIntoView({ behavior: "smooth", block: "start" });
-          toast("排盤完成");
+          if (!options.silent) {
+            document
+              .getElementById("result")
+              .scrollIntoView({ behavior: "smooth", block: "start" });
+            toast("排盤完成");
+          }
         }
         function randomYao() {
           const a = [];
@@ -2836,6 +2944,7 @@
         }
         function reset() {
           last = null;
+          lastRenderedTimeKey = "";
           document.getElementById("result").classList.remove("show");
           document.getElementById("emptyState").style.display = "grid";
           document.getElementById("question").value = "";
@@ -2847,11 +2956,33 @@
           toast("已重新起卦");
         }
         function init() {
-          const d = new Date();
-          d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-          document.getElementById("divineTime").value = d
-            .toISOString()
-            .slice(0, 16);
+          const divineTime = document.getElementById("divineTime");
+          const timeStatus = document.getElementById("timeStatus");
+          const openedAt = new Date();
+          let clockTimer = null;
+          const syncLiveTime = () => {
+            let now;
+            try {
+              now = new Date();
+              if (Number.isNaN(now.getTime())) throw new Error("invalid clock");
+            } catch (e) {
+              now = openedAt;
+            }
+            const next = toDateTimeLocalValue(now);
+            divineTime.value = toDateTimeDisplayValue(now);
+            timeStatus.textContent = "目前時間（自動更新）";
+            if (last && lastRenderedTimeKey !== next) {
+              process(last.yaos, last.source, { silent: true });
+            }
+            if (clockTimer) window.clearTimeout(clockTimer);
+            if (typeof window.setTimeout === "function") {
+              clockTimer = window.setTimeout(syncLiveTime, 1000 - now.getMilliseconds() + 10);
+            }
+          };
+          syncLiveTime();
+          document.addEventListener("visibilitychange", syncLiveTime);
+          window.addEventListener("pageshow", syncLiveTime);
+          window.addEventListener("focus", syncLiveTime);
           const primarySelect = document.getElementById("primaryHexSelect"),
             changingSelect = document.getElementById("changingHexSelect");
           const options = hexagrams
@@ -2918,29 +3049,29 @@
               }
             };
             const useIpFallback = async () => {
-              status.textContent =
-                "精準定位受嵌入許可權限制，正在取得約略位置…";
+              status.textContent = "正在取得約略所在地…";
+              const controller = typeof AbortController === "function" ? new AbortController() : null;
+              const timeout = controller ? window.setTimeout(() => controller.abort(), 3500) : null;
               try {
                 const r = await fetch("https://ipapi.co/json/", {
                   cache: "no-store",
+                  signal: controller ? controller.signal : undefined,
                 });
                 const data = await r.json();
-                if (data && data.city) {
+                if (data && (data.city || data.region || data.country_name)) {
                   setLocation(
-                    `${data.city}${data.region ? `，${data.region}` : ""}${data.country_name ? `，${data.country_name}` : ""}`,
+                    `${data.city || ""}${data.region ? `，${data.region}` : ""}${data.country_name ? `，${data.country_name}` : ""}`,
                     "approx",
                   );
                   return;
                 }
               } catch (e) {}
-              status.textContent = embedded
-                ? "Google Sites 嵌入頁面未授予定位許可權；請直接開啟 GitHub Pages 網址後再允許定位。"
-                : "無法取得所在地點，請檢查瀏覽器定位許可權。";
+              if (timeout) window.clearTimeout(timeout);
+              status.textContent = "無法自動取得所在地，請稍後再試或直接開啟瀏覽器定位權限。";
               toast("所在地點抓取失敗");
             };
             if (!window.isSecureContext) {
-              status.textContent =
-                "定位需要 HTTPS；請使用 GitHub Pages 的 https:// 網址。";
+              useIpFallback();
               return;
             }
             if (!navigator.geolocation) {
@@ -2951,20 +3082,25 @@
               ? "正在請求定位；若 Google Sites 阻擋，將改用約略位置…"
               : "正在取得所在地點，請允許瀏覽器使用定位…";
             navigator.geolocation.getCurrentPosition(
-              async (pos) => {
+              (pos) => {
                 const lat = pos.coords.latitude.toFixed(5),
                   lon = pos.coords.longitude.toFixed(5);
-                let label = `座標 ${lat}, ${lon}`;
-                try {
-                  const r = await fetch(
-                    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&accept-language=zh-TW`,
-                  );
-                  if (r.ok) {
-                    const data = await r.json();
-                    label = data.display_name || label;
-                  }
-                } catch (e) {}
-                setLocation(label);
+                const coordinateLabel = `座標 ${lat}, ${lon}`;
+                setLocation(coordinateLabel);
+                const controller = typeof AbortController === "function" ? new AbortController() : null;
+                const timeout = controller ? window.setTimeout(() => controller.abort(), 3500) : null;
+                fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&accept-language=zh-TW`,
+                  { signal: controller ? controller.signal : undefined },
+                )
+                  .then((r) => (r.ok ? r.json() : null))
+                  .then((data) => {
+                    if (data && data.display_name) setLocation(data.display_name);
+                  })
+                  .catch(() => {})
+                  .finally(() => {
+                    if (timeout) window.clearTimeout(timeout);
+                  });
               },
               (err) => {
                 if (err && err.code === 1 && embedded) {
@@ -2981,7 +3117,7 @@
                   toast("所在地點抓取失敗");
                 }
               },
-              { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+              { enableHighAccuracy: false, timeout: 4500, maximumAge: 300000 },
             );
           };
           document.getElementById("resetBtn").onclick = reset;

@@ -3046,6 +3046,7 @@
           meta,
           pillarsData,
           source,
+          readingDate = getDate(),
         ) {
           const q =
             document.getElementById("question").value.trim() || "未填寫";
@@ -3059,7 +3060,7 @@
             .filter(Boolean);
           let t = "【六爻易卦排盤結果｜京房納甲】\n";
           t += "==================================================\n";
-          t += `佔問事項：${q}\n性別：${gender}\n所在地點：${loc}\n起卦時間：${document.getElementById("divineTime").value.replace("T", " ")}\n起卦方式：${source}\n`;
+          t += `佔問事項：${q}\n性別：${gender}\n所在地點：${loc}\n起卦時間：${toDateTimeDisplayValue(readingDate)}\n起卦方式：${source}\n`;
           t += `年柱：${pillarsData.year}　月柱：${pillarsData.month}　日柱：${pillarsData.day}　時柱：${pillarsData.hour}\n月建：${pillarsData.monthBranch}　日辰：${pillarsData.dayBranch}　旬空：${pillarsData.xunKong}\n`;
           t += "==================================================\n";
           t += `本卦：${hexName(primary)}卦（第 ${primary.id} 卦／${primary.xiang}）\n`;
@@ -3108,16 +3109,17 @@
             .map((v, i) => (v === 2 || v === 3 ? i + 1 : null))
             .filter(Boolean);
           const changing = getChanging(yaos);
-          const p = pillars(getDate());
+          const readingDate = options.readingDate || getDate();
+          const p = pillars(readingDate);
           const meta = chartMeta(primary);
-          last = { yaos: [...yaos], primary, changing, meta, pillars: p, source };
-          lastRenderedTimeKey = toDateTimeLocalValue(getDate());
+          last = { yaos: [...yaos], primary, changing, meta, pillars: p, source, readingDate };
+          lastRenderedTimeKey = toDateTimeLocalValue(readingDate);
           document.getElementById("emptyState").style.display = "none";
           document.getElementById("result").classList.add("show");
           document.getElementById("resultTitle").textContent =
             `${hexName(primary)}卦排盤${changing && changing.id !== primary.id ? " → " + hexName(changing) + "變卦" : "（本卦＝變卦）"}`;
           document.getElementById("resultMeta").textContent =
-            `${formatCalendarSummary(getDate())}\n問題：${document.getElementById("question").value.trim() || "未填寫"}　｜　${source}`;
+            `${formatCalendarSummary(readingDate)}\n問題：${document.getElementById("question").value.trim() || "未填寫"}　｜　${source}`;
           document.getElementById("movingPill").textContent =
             `動爻 ${moving.length}`;
           document.getElementById("movingPill").className =
@@ -3149,6 +3151,7 @@
             meta,
             p,
             source,
+            readingDate,
           );
           document.getElementById("plainStatus").textContent =
             "報告已更新，可複製或下載";
@@ -3199,9 +3202,6 @@
             divineTime.value = toDateTimeDisplayValue(now);
             timeStatus.textContent =
               `${current.year}-${String(current.month).padStart(2, "0")}-${String(current.day).padStart(2, "0")} ${String(current.hour).padStart(2, "0")}:${String(current.minute).padStart(2, "0")}（目前時間）`;
-            if (last && lastRenderedTimeKey !== next) {
-              process(last.yaos, last.source, { silent: true });
-            }
             if (clockTimer) window.clearTimeout(clockTimer);
             if (typeof window.setTimeout === "function") {
               clockTimer = window.setTimeout(syncLiveTime, 1000 - now.getMilliseconds() + 10);
@@ -3282,6 +3282,7 @@
                   last.meta,
                   last.pillars,
                   last.source,
+                  last.readingDate,
                 );
               }
             };
@@ -3388,7 +3389,7 @@
           ["showNaJia", "showFuShen", "showReadings"].forEach(
             (id) =>
               (document.getElementById(id).onchange = () => {
-                if (last) process(last.yaos, last.source);
+                if (last) process(last.yaos, last.source, { readingDate: last.readingDate });
               }),
           );
           document.getElementById("selectPlain").onclick = () => {

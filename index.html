@@ -276,6 +276,7 @@
         font-weight: 700;
         text-align: center;
         overflow-wrap: anywhere;
+        white-space: pre-line;
       }
       .live-time-input {
         color: var(--blue) !important;
@@ -412,6 +413,7 @@
         font-size: 12px;
         color: var(--muted);
         margin-top: 5px;
+        white-space: pre-line;
       }
       .pill {
         display: inline-block;
@@ -607,6 +609,7 @@
         margin-top: 15px;
       }
       .info-item {
+        min-width: 0;
         border: 1px solid var(--line);
         background: #fbfcfe;
         border-radius: 6px;
@@ -621,6 +624,7 @@
         font-size: 12px;
         font-weight: 700;
         color: var(--ink-2);
+        overflow-wrap: anywhere;
       }
       .readings {
         display: grid;
@@ -728,6 +732,9 @@
         color: var(--ink);
         border-color: #fff;
       }
+      .plain-toolbar .btn-row {
+        min-width: 0;
+      }
       .plain-toolbar .btn.primary {
         background: #f0bd5b;
         border-color: #f0bd5b;
@@ -749,7 +756,8 @@
         margin: 12px 0;
       }
       .library-tools input {
-        max-width: 260px;
+        width: min(100%, 560px);
+        max-width: 560px;
       }
       .lib-grid {
         display: grid;
@@ -870,7 +878,7 @@
           white-space: normal;
         }
         .info-grid {
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
         .library-tools {
           flex-direction: column;
@@ -947,6 +955,8 @@
       .hex-lookup-lines {
         display: flex;
         flex-direction: column;
+        aspect-ratio: 1 / 1;
+        justify-content: space-evenly;
         gap: 3px;
         padding: 2px 0;
       }
@@ -1024,6 +1034,10 @@
         margin-bottom: 16px;
       }
       .hex-detail-lines {
+        display: flex;
+        flex-direction: column;
+        aspect-ratio: 1 / 1;
+        justify-content: space-evenly;
         border: 1px solid var(--line);
         border-radius: 8px;
         padding: 12px;
@@ -1031,7 +1045,7 @@
       }
       .hex-detail-lines .hex-lookup-line {
         height: 10px;
-        margin: 5px 0;
+        margin: 0;
       }
       .hex-detail-section {
         border-top: 1px solid var(--line);
@@ -1119,7 +1133,7 @@
       }
       .hex-lookup-line {
         width: 100%;
-        height: 5px;
+        height: 8px;
       }
       .hex-detail-lines {
         width: 124px;
@@ -1127,7 +1141,7 @@
         margin: 0 auto;
       }
       .hex-detail-lines .hex-lookup-line {
-        height: 8px;
+        height: 12px;
       }
       @media print {
         body {
@@ -1359,7 +1373,7 @@
               <div class="plain-toolbar">
                 <span class="status" id="plainStatus">等待操作</span>
                 <div class="btn-row">
-                  <button class="btn" id="selectPlain" type="button">全選文字</button
+                  <button class="btn" id="selectPlain" type="button" style="color: #fff; border-color: var(--red); background: var(--red);">重新卜卦</button
                   ><button class="btn" id="downloadPlain" type="button">下載 TXT</button
                   ><button class="btn primary" id="copyPlain" type="button">一鍵複製</button>
                 </div>
@@ -1373,9 +1387,13 @@
                 <input
                   id="hexSearch"
                   type="text"
-                  placeholder="搜尋卦名或卦號"
+                  aria-label="搜尋卦名、卦號或六位卦象碼"
+                  placeholder="搜尋卦名、卦號或六位卦象（如 100010）"
                 /><span class="hint" id="libraryCount"></span>
               </div>
+              <p class="hint" style="margin-top: -4px">
+                備註：1（陰）　0（陽）
+              </p>
               <div class="lib-grid" id="libGrid"></div>
             </details>
           </section>
@@ -2532,15 +2550,173 @@
             BRANCHES[i % 12],
           ]).findIndex(([s, b]) => s === stem && b === branch);
         }
+        const TAIPEI_TIME_ZONE = "Asia/Taipei";
+        const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+        const LUNAR_DAY_NAMES = [
+          "",
+          "初一",
+          "初二",
+          "初三",
+          "初四",
+          "初五",
+          "初六",
+          "初七",
+          "初八",
+          "初九",
+          "初十",
+          "十一",
+          "十二",
+          "十三",
+          "十四",
+          "十五",
+          "十六",
+          "十七",
+          "十八",
+          "十九",
+          "二十",
+          "廿一",
+          "廿二",
+          "廿三",
+          "廿四",
+          "廿五",
+          "廿六",
+          "廿七",
+          "廿八",
+          "廿九",
+          "三十",
+        ];
+        function taipeiParts(date = new Date()) {
+          const parts = new Intl.DateTimeFormat("zh-TW", {
+            timeZone: TAIPEI_TIME_ZONE,
+            calendar: "gregory",
+            numberingSystem: "latn",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hourCycle: "h23",
+          }).formatToParts(date);
+          const values = Object.fromEntries(
+            parts
+              .filter(({ type }) => type !== "literal")
+              .map(({ type, value }) => [type, Number(value)]),
+          );
+          return values;
+        }
+        function lunarParts(date = new Date()) {
+          const parts = new Intl.DateTimeFormat("zh-TW-u-ca-chinese", {
+            timeZone: TAIPEI_TIME_ZONE,
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }).formatToParts(date);
+          const values = Object.fromEntries(
+            parts
+              .filter(({ type }) => ["relatedYear", "yearName", "month", "day"].includes(type))
+              .map(({ type, value }) => [type, value]),
+          );
+          const day = Number(values.day);
+          return {
+            yearName: values.yearName || "",
+            month: values.month || "",
+            day: LUNAR_DAY_NAMES[day] || values.day || "",
+          };
+        }
+        function isoWeekNumber(year, month, day) {
+          const date = new Date(Date.UTC(year, month - 1, day));
+          const dayNumber = date.getUTCDay() || 7;
+          date.setUTCDate(date.getUTCDate() + 4 - dayNumber);
+          const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+          return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+        }
+        function shichenInfo(hour) {
+          const names = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+          const ranges = [
+            "23:00 - 01:00",
+            "01:00 - 03:00",
+            "03:00 - 05:00",
+            "05:00 - 07:00",
+            "07:00 - 09:00",
+            "09:00 - 11:00",
+            "11:00 - 13:00",
+            "13:00 - 15:00",
+            "15:00 - 17:00",
+            "17:00 - 19:00",
+            "19:00 - 21:00",
+            "21:00 - 23:00",
+          ];
+          const index = Math.floor(((hour + 1) % 24) / 2);
+          return { branch: names[index], range: ranges[index] };
+        }
+        function taiwanHoliday(month, day) {
+          return {
+            "1-1": "元旦",
+            "2-28": "和平紀念日",
+            "4-4": "兒童節",
+            "4-5": "清明節",
+            "5-1": "勞動節",
+            "10-10": "國慶日",
+            "10-25": "光復節",
+            "12-25": "行憲紀念日",
+          }[`${month}-${day}`] || "";
+        }
+        function formatCalendarSummary(date = new Date()) {
+          const local = taipeiParts(date);
+          const lunar = lunarParts(date);
+          const currentPillars = pillars(date);
+          const zodiac = {
+            子: "鼠",
+            丑: "牛",
+            寅: "虎",
+            卯: "兔",
+            辰: "龍",
+            巳: "蛇",
+            午: "馬",
+            未: "羊",
+            申: "猴",
+            酉: "雞",
+            戌: "狗",
+            亥: "豬",
+          }[lunar.yearName.slice(-1)] || "";
+          const weekday = WEEKDAYS[
+            new Date(Date.UTC(local.year, local.month - 1, local.day)).getUTCDay()
+          ];
+          return (
+            `當前時間：${local.year}年${local.month}月${local.day}日 ${String(local.hour).padStart(2, "0")}:${String(local.minute).padStart(2, "0")}（星期${weekday}）\n` +
+            `當前時辰：${shichenInfo(local.hour).branch}時（${shichenInfo(local.hour).range}）\n` +
+            `農曆${lunar.month}${lunar.day}｜${lunar.yearName}${zodiac}年 ${currentPillars.month}月 ${currentPillars.day}日`
+          );
+        }
+        function solarMonthBranch(month, day) {
+          const starts = [
+            [1, 6, "丑"],
+            [2, 4, "寅"],
+            [3, 5, "卯"],
+            [4, 4, "辰"],
+            [5, 5, "巳"],
+            [6, 5, "午"],
+            [7, 7, "未"],
+            [8, 7, "申"],
+            [9, 7, "酉"],
+            [10, 8, "戌"],
+            [11, 7, "亥"],
+            [12, 7, "子"],
+          ];
+          let branch = "丑";
+          starts.forEach(([m, startDay, value]) => {
+            if (month > m || (month === m && day >= startDay)) branch = value;
+          });
+          return branch;
+        }
         function pillars(date) {
-          const y = date.getFullYear(),
-            m = date.getMonth() + 1,
-            d = date.getDate(),
-            hour = date.getHours();
-          const yearStem = STEMS[(y - 4 + 600) % 10],
-            yearBranch = BRANCHES[(y - 4 + 600) % 12];
-          const monthBranch = BRANCHES[((m + 1) % 12) + 0];
-          let monthStart = {
+          const { year: y, month: m, day: d, hour } = taipeiParts(date);
+          const solarYear = m < 2 || (m === 2 && d < 4) ? y - 1 : y;
+          const yearStem = STEMS[(solarYear - 4 + 600) % 10],
+            yearBranch = BRANCHES[(solarYear - 4 + 600) % 12];
+          const monthBranch = solarMonthBranch(m, d);
+          const monthStart = {
             甲: 2,
             己: 2,
             乙: 4,
@@ -2552,10 +2728,11 @@
             戊: 0,
             癸: 0,
           }[yearStem];
-          let monthStem = STEMS[(monthStart + ((m - 2 + 12) % 12)) % 10];
+          const monthOffset = (BRANCHES.indexOf(monthBranch) - 2 + 12) % 12;
+          const monthStem = STEMS[(monthStart + monthOffset) % 10];
           const anchor = Date.UTC(2000, 0, 1),
             diff = Math.round((Date.UTC(y, m - 1, d) - anchor) / 86400000);
-          const dayIdx = (16 + diff + 6000) % 60,
+          const dayIdx = (54 + diff + 6000) % 60,
             dayStem = STEMS[dayIdx % 10],
             dayBranch = BRANCHES[dayIdx % 12];
           const hb = Math.floor(((hour + 1) % 24) / 2);
@@ -2653,11 +2830,13 @@
         }
         function toDateTimeLocalValue(date = new Date()) {
           const pad = (v) => String(v).padStart(2, "0");
-          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+          const p = taipeiParts(date);
+          return `${p.year}-${pad(p.month)}-${pad(p.day)}T${pad(p.hour)}:${pad(p.minute)}`;
         }
         function toDateTimeDisplayValue(date = new Date()) {
           const pad = (v) => String(v).padStart(2, "0");
-          return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+          const p = taipeiParts(date);
+          return `${p.year}-${pad(p.month)}-${pad(p.day)} ${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)}`;
         }
         function getDate() {
           const raw = document.getElementById("divineTime").value;
@@ -2665,7 +2844,11 @@
           const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
           if (!match) return new Date();
           const [, y, m, d, h, min, sec = "0"] = match;
-          const date = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), Number(sec), 0);
+          // divineTime 是台北時區的「牆上時間」，轉成 Date 時要扣除台北 UTC+8，避免卜卦後時辰多移動八小時。
+          const date = new Date(
+            Date.UTC(Number(y), Number(m) - 1, Number(d), Number(h), Number(min), Number(sec), 0) -
+              8 * 60 * 60 * 1000,
+          );
           return Number.isNaN(date.getTime()) ? new Date() : date;
         }
         let manual = [1, 1, 1, 1, 1, 1],
@@ -2934,7 +3117,7 @@
           document.getElementById("resultTitle").textContent =
             `${hexName(primary)}卦排盤${changing && changing.id !== primary.id ? " → " + hexName(changing) + "變卦" : "（本卦＝變卦）"}`;
           document.getElementById("resultMeta").textContent =
-            `問題：${document.getElementById("question").value.trim() || "未填寫"}　｜　${source}`;
+            `${formatCalendarSummary(getDate())}\n問題：${document.getElementById("question").value.trim() || "未填寫"}　｜　${source}`;
           document.getElementById("movingPill").textContent =
             `動爻 ${moving.length}`;
           document.getElementById("movingPill").className =
@@ -3012,8 +3195,10 @@
               now = openedAt;
             }
             const next = toDateTimeLocalValue(now);
+            const current = taipeiParts(now);
             divineTime.value = toDateTimeDisplayValue(now);
-              timeStatus.textContent = next.replace("T", " ") + "（目前時間）";
+            timeStatus.textContent =
+              `${current.year}-${String(current.month).padStart(2, "0")}-${String(current.day).padStart(2, "0")} ${String(current.hour).padStart(2, "0")}:${String(current.minute).padStart(2, "0")}（目前時間）`;
             if (last && lastRenderedTimeKey !== next) {
               process(last.yaos, last.source, { silent: true });
             }
@@ -3051,10 +3236,14 @@
           primarySelect.onchange = syncHint;
           changingSelect.onchange = syncHint;
           syncHint();
-          document.getElementById("computerBtn").onclick = () => {
+          const triggerComputerDivination = ({ scrollTop = false } = {}) => {
             manual = randomYao();
-            process(manual, "電腦起卦（擲三錢）");
+            process(manual, "電腦起卦（擲三錢）", { silent: scrollTop });
+            if (scrollTop) {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           };
+          document.getElementById("computerBtn").onclick = triggerComputerDivination;
           document.getElementById("manualBtn").onclick = () =>
             document.getElementById("manualPanel").classList.toggle("open");
           document.getElementById("applyManual").onclick = () => {
@@ -3203,9 +3392,7 @@
               }),
           );
           document.getElementById("selectPlain").onclick = () => {
-            document.getElementById("plainText").select();
-            document.getElementById("plainStatus").textContent =
-              "已全選，請按 Ctrl+C／⌘C 複製";
+            triggerComputerDivination({ scrollTop: true });
           };
           document.getElementById("copyPlain").onclick = async () => {
             const box = document.getElementById("plainText");
@@ -3233,9 +3420,16 @@
           };
           const grid = document.getElementById("libGrid");
           function renderLib() {
-            const q = document.getElementById("hexSearch").value.trim();
+            const q = document
+              .getElementById("hexSearch")
+              .value.trim()
+              .replace(/\s+/g, "");
             const list = hexagrams.filter(
-              (h) => !q || `${h.id}${h.name}${tc(h.name)}`.includes(q),
+              (h) =>
+                !q ||
+                `${h.id}${h.name}${tc(h.name)}${h.xiang}`
+                  .toLowerCase()
+                  .includes(q.toLowerCase()),
             );
             document.getElementById("libraryCount").textContent =
               `顯示 ${list.length} / 64 卦`;
@@ -3250,7 +3444,7 @@
                       `<div class="hex-lookup-line ${v === "0" ? "broken" : ""}"></div>`,
                   )
                   .join("");
-                return `<button class="hex-lookup-card" type="button" data-id="${h.id}"><h4>第 ${h.id} 卦・${hexName(h)}</h4><div class="hex-lookup-lines">${lines}</div><small>${HEX_MEANINGS[h.id] || "點選檢視詳細卦義"}</small></button>`;
+                return `<button class="hex-lookup-card" type="button" data-id="${h.id}"><h4>第 ${h.id} 卦・${hexName(h)}</h4><div class="hex-lookup-lines">${lines}</div><small>卦象：${h.xiang}</small><small>${HEX_MEANINGS[h.id] || "點選檢視詳細卦義"}</small></button>`;
               })
               .join("");
             grid

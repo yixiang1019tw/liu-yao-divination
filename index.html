@@ -1392,7 +1392,7 @@
                 /><span class="hint" id="libraryCount"></span>
               </div>
               <p class="hint" style="margin-top: -4px">
-                備註：1（陰）　0（陽）
+                備註：1（陽）　0（陰）
               </p>
               <div class="lib-grid" id="libGrid"></div>
             </details>
@@ -2805,7 +2805,7 @@
             palace: p.palace,
             palaceElement: element,
             shi: p.shi,
-            ying: p.shi > 3 ? p.shi - 3 : p.shi,
+            ying: p.shi > 3 ? p.shi - 3 : p.shi + 3,
             na,
             rels,
             fuByRow,
@@ -3019,6 +3019,12 @@
           const body = document.getElementById("chartBody");
           const beastsStart = BEASTS.indexOf(baseBeasts(pillarsData.dayStem));
           const changed = yaos.map((v) => (v === 2 ? 1 : v === 3 ? 0 : v));
+          const changedNa = changing ? getNaJia(changing.xiang) : [];
+          const changedRels = changing
+            ? changedNa.map((n) =>
+                relative(BRANCH_E[n.slice(1)], meta.palaceElement),
+              )
+            : [];
           body.innerHTML = [5, 4, 3, 2, 1, 0]
             .map((i) => {
               const pos = i + 1,
@@ -3032,7 +3038,7 @@
               const beast = BEASTS[(beastsStart + i) % 6];
               const shi = i + 1 === meta.shi,
                 ying = i + 1 === meta.ying;
-              return `<tr class="${moving ? "moving-row" : ""}"><td>${shi ? '<span class="shi">世</span>' : ying ? '<span class="ying">應</span>' : "—"}</td><td class="position">${NAMES[i]}</td><td class="animal">${beast}</td><td class="na-jia">${document.getElementById("showNaJia").checked ? na : "—"}</td><td class="hidden">${fu || "—"}</td><td class="relative">${document.getElementById("showNaJia").checked ? relativeText : "—"}</td><td><span class="base-label">${lineSymbol(v)} ${lineState(v)}</span></td><td>${changing ? `<span class="change-label">${lineSymbol(changed[i], true)} ${lineState(changed[i], true)}</span>` : "—"}</td><td>${moving ? '<span class="shi">● 動</span>' : "—"}</td></tr>`;
+              return `<tr class="${moving ? "moving-row" : ""}"><td>${shi ? '<span class="shi">世</span>' : ying ? '<span class="ying">應</span>' : "—"}</td><td class="position">${NAMES[i]}</td><td class="animal">${beast}</td><td class="na-jia">${document.getElementById("showNaJia").checked ? na : "—"}</td><td class="hidden">${fu || "—"}</td><td class="relative">${document.getElementById("showNaJia").checked ? relativeText : "—"}</td><td><span class="base-label">${lineSymbol(v)} ${lineState(v)}</span></td><td>${changing ? `<span class="change-label">${document.getElementById("showNaJia").checked ? `${changedNa[i]}（${changedRels[i]}）<br>` : ""}${lineSymbol(changed[i], true)} ${lineState(changed[i], true)}</span>` : "—"}</td><td>${moving ? '<span class="shi">● 動</span>' : "—"}</td></tr>`;
             })
             .join("");
         }
@@ -3058,6 +3064,12 @@
           const moving = yaos
             .map((v, i) => (v === 2 || v === 3 ? i + 1 : null))
             .filter(Boolean);
+          const changedNa = changing ? getNaJia(changing.xiang) : [];
+          const changedRels = changing
+            ? changedNa.map((n) =>
+                relative(BRANCH_E[n.slice(1)], meta.palaceElement),
+              )
+            : [];
           let t = "【六爻易卦排盤結果｜京房納甲】\n";
           t += "==================================================\n";
           t += `佔問事項：${q}\n性別：${gender}\n所在地點：${loc}\n起卦時間：${toDateTimeDisplayValue(readingDate)}\n起卦方式：${source}\n`;
@@ -3075,7 +3087,7 @@
               i + 1 === meta.shi ? "世" : i + 1 === meta.ying ? "應" : "";
             const beast =
               BEASTS[(BEASTS.indexOf(baseBeasts(pillarsData.dayStem)) + i) % 6];
-            t += `${shi.padEnd(2, " ")}${NAMES[i]}｜${beast}｜納甲 ${meta.na[i]}｜${meta.rels[i]}｜本卦 ${lineSymbol(v)} ${lineState(v)}｜變卦 ${change === null ? "—" : lineSymbol(change, true) + " " + lineState(change, true)}${v === 2 || v === 3 ? "｜★ 動爻" : ""}\n`;
+            t += `${shi.padEnd(2, " ")}${NAMES[i]}｜${beast}｜本卦 ${meta.na[i]} ${meta.rels[i]} ${lineSymbol(v)} ${lineState(v)}｜變卦 ${change === null ? "—" : `${changedNa[i]} ${changedRels[i]} ${lineSymbol(change, true)} ${lineState(change, true)}`}${v === 2 || v === 3 ? "｜★ 動爻" : ""}\n`;
           }
           if (document.getElementById("showFuShen").checked) {
             const fu = meta.fuByRow.filter(Boolean);

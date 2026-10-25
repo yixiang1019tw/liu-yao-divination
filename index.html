@@ -1189,7 +1189,7 @@
         </div>
         <div class="top-actions">
           <button class="btn" id="hexLookupBtn" type="button" aria-expanded="false" aria-controls="hexLibraryCard">卦象速查</button
-              ><button class="btn" id="resetBtn" type="button">重新起卦</button>
+              ><button class="btn" id="resetBtn" type="button">重新卜卦</button>
         </div>
       </header>
       <div class="layout">
@@ -3019,12 +3019,6 @@
           const body = document.getElementById("chartBody");
           const beastsStart = BEASTS.indexOf(baseBeasts(pillarsData.dayStem));
           const changed = yaos.map((v) => (v === 2 ? 1 : v === 3 ? 0 : v));
-          const changedNa = changing ? getNaJia(changing.xiang) : [];
-          const changedRels = changing
-            ? changedNa.map((n) =>
-                relative(BRANCH_E[n.slice(1)], meta.palaceElement),
-              )
-            : [];
           body.innerHTML = [5, 4, 3, 2, 1, 0]
             .map((i) => {
               const pos = i + 1,
@@ -3038,7 +3032,7 @@
               const beast = BEASTS[(beastsStart + i) % 6];
               const shi = i + 1 === meta.shi,
                 ying = i + 1 === meta.ying;
-              return `<tr class="${moving ? "moving-row" : ""}"><td>${shi ? '<span class="shi">世</span>' : ying ? '<span class="ying">應</span>' : "—"}</td><td class="position">${NAMES[i]}</td><td class="animal">${beast}</td><td class="na-jia">${document.getElementById("showNaJia").checked ? na : "—"}</td><td class="hidden">${fu || "—"}</td><td class="relative">${document.getElementById("showNaJia").checked ? relativeText : "—"}</td><td><span class="base-label">${lineSymbol(v)} ${lineState(v)}</span></td><td>${changing ? `<span class="change-label">${document.getElementById("showNaJia").checked ? `${changedNa[i]}（${changedRels[i]}）<br>` : ""}${lineSymbol(changed[i], true)} ${lineState(changed[i], true)}</span>` : "—"}</td><td>${moving ? '<span class="shi">● 動</span>' : "—"}</td></tr>`;
+              return `<tr class="${moving ? "moving-row" : ""}"><td>${shi ? '<span class="shi">世</span>' : ying ? '<span class="ying">應</span>' : "—"}</td><td class="position">${NAMES[i]}</td><td class="animal">${beast}</td><td class="na-jia">${document.getElementById("showNaJia").checked ? na : "—"}</td><td class="hidden">${fu || "—"}</td><td class="relative">${document.getElementById("showNaJia").checked ? relativeText : "—"}</td><td><span class="base-label">${lineSymbol(v)} ${lineState(v)}</span></td><td>${changing ? `<span class="change-label">${lineSymbol(changed[i], true)} ${lineState(changed[i], true)}</span>` : "—"}</td><td>${moving ? '<span class="shi">● 動</span>' : "—"}</td></tr>`;
             })
             .join("");
         }
@@ -3128,6 +3122,8 @@
           lastRenderedTimeKey = toDateTimeLocalValue(readingDate);
           document.getElementById("emptyState").style.display = "none";
           document.getElementById("result").classList.add("show");
+          document.getElementById("result").style.display = "";
+          document.getElementById("emptyState").style.display = "none";
           document.getElementById("resultTitle").textContent =
             `${hexName(primary)}卦排盤${changing && changing.id !== primary.id ? " → " + hexName(changing) + "變卦" : "（本卦＝變卦）"}`;
           document.getElementById("resultMeta").textContent =
@@ -3183,18 +3179,39 @@
           }
           return a;
         }
-        function reset() {
+        function resetToInitialState(event) {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+          }
           last = null;
           lastRenderedTimeKey = "";
-          document.getElementById("result").classList.remove("show");
-          document.getElementById("emptyState").style.display = "grid";
+          const result = document.getElementById("result");
+          const emptyState = document.getElementById("emptyState");
+          result.classList.remove("show");
+          result.style.display = "none";
+          emptyState.style.display = "grid";
+          emptyState.querySelector("h2").textContent = "等待起卦";
+          emptyState.querySelector("p").textContent =
+            "先輸入問題與時間，再按左側「電腦起卦・擲三錢」。排盤結果會完整顯示於此。";
+          document.getElementById("resultTitle").textContent = "排盤結果";
+          document.getElementById("resultMeta").textContent = "";
+          document.getElementById("movingPill").textContent = "動爻 0";
+          document.getElementById("timeInfo").innerHTML = "";
+          document.getElementById("hexOverview").innerHTML = "";
+          document.getElementById("chartBody").innerHTML = "";
+          document.getElementById("fuNote").innerHTML = "";
+          document.getElementById("plainText").value = "";
+          document.getElementById("plainStatus").textContent = "";
           document.getElementById("question").value = "";
-          document.getElementById("location").value = "";
+          manual = [1, 1, 1, 1, 1, 1];
           document.getElementById("primaryHexSelect").value = "1";
           document.getElementById("changingHexSelect").value = "1";
           document.getElementById("manualChangeHint").textContent =
             "兩卦相同時，表示沒有動爻。";
-          toast("已重新起卦");
+          window.scrollTo(0, 0);
+          toast("已清除卦象，回到等待起卦");
         }
         function init() {
           const divineTime = document.getElementById("divineTime");
@@ -3256,6 +3273,19 @@
             }
           };
           document.getElementById("computerBtn").onclick = triggerComputerDivination;
+          document.addEventListener(
+            "click",
+            (event) => {
+              const resetButton = event.target.closest?.("#resetBtn");
+              if (
+                resetButton &&
+                !document.body.classList.contains("hex-only-mode")
+              ) {
+                resetToInitialState(event);
+              }
+            },
+            true,
+          );
           document.getElementById("manualBtn").onclick = () =>
             document.getElementById("manualPanel").classList.toggle("open");
           document.getElementById("applyManual").onclick = () => {
@@ -3397,16 +3427,14 @@
               { enableHighAccuracy: false, timeout: 4500, maximumAge: 300000 },
             );
           };
-          document.getElementById("resetBtn").onclick = reset;
+          document.getElementById("resetBtn").onclick = resetToInitialState;
           ["showNaJia", "showFuShen", "showReadings"].forEach(
             (id) =>
               (document.getElementById(id).onchange = () => {
                 if (last) process(last.yaos, last.source, { readingDate: last.readingDate });
               }),
           );
-          document.getElementById("selectPlain").onclick = () => {
-            triggerComputerDivination({ scrollTop: true });
-          };
+          document.getElementById("selectPlain").onclick = resetToInitialState;
           document.getElementById("copyPlain").onclick = async () => {
             const box = document.getElementById("plainText");
             box.select();
@@ -3477,8 +3505,8 @@
             lookupBtn.textContent = on ? "返回排盤" : "卦象速查";
             lookupBtn.setAttribute("aria-expanded", String(on));
             document.getElementById("hexLibraryCard").setAttribute("aria-hidden", String(!on));
-            resetBtn.textContent = on ? "起卦排盤" : "重新起卦";
-            resetBtn.onclick = on ? toggleHexOnlyMode : reset;
+            resetBtn.textContent = on ? "起卦排盤" : "重新卜卦";
+            resetBtn.onclick = on ? toggleHexOnlyMode : resetToInitialState;
             const details = document.getElementById("hexLibraryDetails");
             details.open = on;
             if (on) {
